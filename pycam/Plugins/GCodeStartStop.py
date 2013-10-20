@@ -42,7 +42,7 @@ class GCodeStartStop(pycam.Plugins.PluginBase):
                     ("GCodeStopCode", "gcode_footer")):
                 obj = self.gui.get_object(objname)
                 self.core.add_item(setting,
-                                   lambda: self.get_value(obj),
+                                   lambda x=obj: self.get_value(x),
                                    obj.get_buffer().set_text)
         return True
 
