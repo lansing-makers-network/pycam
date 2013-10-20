@@ -102,6 +102,7 @@ PREFERENCES_DEFAULTS = {
         "gcode_header": "",
         "gcode_footer": "",
         "gcode_alternate_line_comments": False,
+        "gcode_disable_tool_during_rapids": False,
         "external_program_inkscape": "",
         "external_program_pstoedit": "",
         "touch_off_on_startup": False,

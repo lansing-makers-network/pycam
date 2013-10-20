@@ -438,8 +438,8 @@ There is NO WARRANTY, to the extent permitted by law.''' % VERSION
                 handler, closer = get_output_handler(opts.export_gcode)
                 if handler is None:
                     return EXIT_CODES["write_output_failed"]
-                gcode_header = opts.gcode_header if opts.gcode_header else None
-                gcode_footer = opts.gcode_footer if opts.gcode.footer else None
+                gcode_header = opts.gcode_header or None
+                gcode_footer = opts.gcode_footer or None
                 generator = pycam.Exporters.GCodeExporter.GCodeGenerator(
                         handler, metric_units = (opts.unit_size == "mm"),
                         safety_height=opts.safety_height,
@@ -447,7 +447,8 @@ There is NO WARRANTY, to the extent permitted by law.''' % VERSION
                         minimum_steps=[opts.gcode_minimum_step],
                         header=gcode_header,
                         footer=gcode_footer,
-                        alternate_line_comments=opts.gcode_alternate_line_comments)
+                        alternate_line_comments=opts.gcode_alternate_line_comments,
+                        disable_tool_during_rapids=opts.gcode_disable_tool_during_rapids)
                 generator.set_speed(opts.tool_feedrate, opts.tool_spindle_speed)
                 path_mode = opts.gcode_path_mode
                 PATH_MODES = pycam.Exporters.GCodeExporter.PATH_MODES

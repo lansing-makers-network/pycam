@@ -79,7 +79,8 @@ class GCodeGenerator(object):
             touch_off_on_tool_change=False, touch_off_position=None,
             touch_off_rapid_move=0, touch_off_slow_move=1,
             touch_off_slow_feedrate=20, touch_off_height=0,
-            touch_off_pause_execution=False, footer=None, alternate_line_comments=False):
+            touch_off_pause_execution=False, footer=None,
+            alternate_line_comments=False, disable_tool_during_rapids=False):
         if isinstance(destination, basestring):
             # open the file
             self.destination = file(destination,"w")
@@ -91,6 +92,7 @@ class GCodeGenerator(object):
             # don't close the stream if we did not open it on our own
             self._close_stream_on_exit = False
         self.use_alternate_line_comments = alternate_line_comments
+        self.disable_tool_during_rapids = disable_tool_during_rapids
         self.safety_height = safety_height
         self.toggle_spindle_status = toggle_spindle_status
         self.spindle_delay = spindle_delay
@@ -318,8 +320,12 @@ class GCodeGenerator(object):
         if rapid == self.last_rapid:
             prefix = ""
         elif rapid:
+            if self.disable_tool_during_rapids:
+                self.append("M5")
             prefix = "G0"
         else:
+            if self.disable_tool_during_rapids:
+                self.append("M3")
             prefix = "G1"
         self.last_rapid = rapid
         self.append("%s %s" % (prefix, " ".join(pos_string)))

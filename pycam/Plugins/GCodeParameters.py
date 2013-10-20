@@ -145,6 +145,25 @@ class GCodeAlternateLineComments(pycam.Plugins.PluginBase):
     def teardown(self):
         del self.core["gcode_alternate_line_comments"]
         self.alternate_line_comments.destroy()
+        
+        
+class GCodeDisableToolDuringRapids(pycam.Plugins.PluginBase):
+
+    DEPENDS = ["GCodePreferences"]
+    CATEGORIES = ["GCode"]
+
+    def setup(self):
+        self.disable_tool_during_rapids = pycam.Gui.ControlsGTK.InputCheckBox()
+        self.disable_tool_during_rapids.get_widget().show()
+        self.core.register_ui("gcode_general_parameters", "Disable tool during rapids",
+                self.disable_tool_during_rapids.get_widget(), weight=100)
+        self.core.add_item("gcode_disable_tool_during_rapids",
+                self.disable_tool_during_rapids.get_value, self.disable_tool_during_rapids.set_value)
+        return True
+
+    def teardown(self):
+        del self.core["gcode_disable_tool_during_rapids"]
+        self.disable_tool_during_rapids.destroy()
 
 
 class GCodeFilenameExtension(pycam.Plugins.PluginBase):
