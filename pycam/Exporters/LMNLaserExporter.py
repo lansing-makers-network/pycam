@@ -26,9 +26,9 @@ import os
 
 
 DEFAULT_HEADER = ("M106 ;fan on",
-		"M84 ;disable steppers until next move",
-		"G90 ;use absolute coordinates",
-                "G92 X0.0 Y0.0 ;zero X and Y axes")
+                  "M84 ;disable steppers until next move",
+                  "G90 ;use absolute coordinates",
+                  "G92 X0.0 Y0.0 ;zero X and Y axes")
 
 PATH_MODES = {"exact_path": 0, "exact_stop": 1, "continuous": 2}
 MAX_DIGITS = 12
@@ -61,22 +61,21 @@ def _get_num_converter(step_width):
     digits = _get_num_of_significant_digits(step_width)
     format_string = "%%.%df" % digits
     return lambda number: decimal.Decimal(format_string % number)
-    
 
-class GCodeGenerator(object):
 
+class LMNCodeGenerator(object):
     NUM_OF_AXES = 3
 
     def __init__(self, destination, metric_units=True, safety_height=0.0,
-            toggle_spindle_status=False, spindle_delay=3, header=None,
-            comment=None, minimum_steps=None, touch_off_on_startup=False,
-            touch_off_on_tool_change=False, touch_off_position=None,
-            touch_off_rapid_move=0, touch_off_slow_move=1,
-            touch_off_slow_feedrate=20, touch_off_height=0,
-            touch_off_pause_execution=False):
+                 toggle_spindle_status=False, spindle_delay=3, header=None,
+                 comment=None, minimum_steps=None, touch_off_on_startup=False,
+                 touch_off_on_tool_change=False, touch_off_position=None,
+                 touch_off_rapid_move=0, touch_off_slow_move=1,
+                 touch_off_slow_feedrate=20, touch_off_height=0,
+                 touch_off_pause_execution=False):
         if isinstance(destination, basestring):
             # open the file
-            self.destination = file(destination,"w")
+            self.destination = file(destination, "w")
             self._close_stream_on_exit = True
         else:
             # assume that "destination" is something like a StringIO instance
@@ -138,7 +137,7 @@ class GCodeGenerator(object):
         if self.touch_off_pause_execution:
             self.append(";msg,Pausing before tool change")
             self.append("M0 ;pause before touch off")
-        # measure the current tool length
+            # measure the current tool length
         if self.touch_off_rapid_move > 0:
             self.append("G0 Z-%f ;go down rapidly" % self.touch_off_rapid_move)
         self.append("G38.2 Z-%f ;do the touch off" % self.touch_off_slow_move)
@@ -161,7 +160,7 @@ class GCodeGenerator(object):
         # off start location. The highest value of these two is used.
         if self.touch_off_on_startup and not self.touch_off_height is None:
             touch_off_safety_height = self.touch_off_height + \
-                    self.touch_off_slow_move + self.touch_off_rapid_move
+                                      self.touch_off_slow_move + self.touch_off_rapid_move
             final_height = max(touch_off_safety_height, self.safety_height)
             self.append("G0 Z%.3f" % final_height)
         else:
@@ -193,7 +192,7 @@ class GCodeGenerator(object):
             self.append("S%.5f" % spindle_speed)
 
     def set_path_mode(self, mode, motion_tolerance=None,
-            naive_cam_tolerance=None):
+                      naive_cam_tolerance=None):
         result = ""
         if mode == PATH_MODES["exact_path"]:
             result = "G61 ;exact path mode"
@@ -204,13 +203,13 @@ class GCodeGenerator(object):
                 result = "G64 ;continuous mode with maximum speed"
             elif naive_cam_tolerance is None:
                 result = "G64 P%f ;continuous mode with tolerance" \
-                        % motion_tolerance
+                         % motion_tolerance
             else:
                 result = ("G64 P%f Q%f ;continuous mode with tolerance and " \
-                        + "cleanup") % (motion_tolerance, naive_cam_tolerance)
+                          + "cleanup") % (motion_tolerance, naive_cam_tolerance)
         else:
             raise ValueError("GCodeGenerator: invalid path mode (%s)" \
-                    % str(mode))
+                             % str(mode))
         self.append(result)
 
     def add_moves(self, moves, tool_id=None, comment=None):
@@ -232,13 +231,13 @@ class GCodeGenerator(object):
                     skip_safety_height_move = True
                     self._on_startup = False
             self.last_tool_id = tool_id
-        # move straight up to safety height
+            # move straight up to safety height
         if not skip_safety_height_move:
             self.add_move_to_safety()
         self.set_spindle_status(True)
         for pos, rapid in moves:
             self.add_move(pos, rapid=rapid)
-        # go back to safety height
+            # go back to safety height
         self.add_move_to_safety()
         self.set_spindle_status(False)
         # make sure that all sections are independent of each other
@@ -252,7 +251,7 @@ class GCodeGenerator(object):
             else:
                 self.append("M5 ;laser off")
             self.append("G04 P%d ;wait for %d seconds" % (self.spindle_delay,
-                    self.spindle_delay))
+                                                          self.spindle_delay))
 
     def add_move_to_safety(self):
         new_pos = [None, None, self.safety_height]
@@ -278,7 +277,7 @@ class GCodeGenerator(object):
                 new_pos.append(None)
             else:
                 new_pos.append(conv(value))
-        # check if there was a significant move
+            # check if there was a significant move
         no_diff = True
         for index in range(len(new_pos)):
             if new_pos[index] is None:
@@ -293,7 +292,7 @@ class GCodeGenerator(object):
         if no_diff:
             # we can safely skip this move
             return
-        # compose the position string
+            # compose the position string
         pos_string = []
         for index, axis_spec in enumerate("XYZ"):
             if new_pos[index] is None:
@@ -313,13 +312,13 @@ class GCodeGenerator(object):
 
     def finish(self):
         self.add_move_to_safety()
-	self.append("M5 ;laser off")
-	self.append("G28 ;home all axes")
-	self.append("G90 ;use absolute coordinates")
-	self.append("G0 Y558 F6000 ;retract gantry for (un)loading")
+        self.append("M5 ;laser off")
+        self.append("G28 ;home all axes")
+        self.append("G90 ;use absolute coordinates")
+        self.append("G0 Y558 F6000 ;retract gantry for (un)loading")
         self.append("M84 ;turn off all steppers")
-	self.append("M107 ;fan off")
-	self.append(";End of job")
+        self.append("M107 ;fan off")
+        self.append(";End of job")
         self._finished = True
 
     def add_comment(self, comment):
@@ -333,7 +332,7 @@ class GCodeGenerator(object):
     def append(self, command):
         if self._finished:
             raise TypeError("GCodeGenerator: can't add further commands to a " \
-                    + "finished GCodeGenerator instance: %s" % str(command))
+                            + "finished GCodeGenerator instance: %s" % str(command))
         if isinstance(command, basestring):
             command = [command]
         for line in command:

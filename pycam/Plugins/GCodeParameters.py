@@ -63,6 +63,7 @@ class GCodePreferences(pycam.Plugins.PluginBase):
                     frame.set_shadow_type(gtk.SHADOW_NONE)
                     align = gtk.Alignment()
                     align.set_padding(3, 0, 12, 0)
+                    align.set(0,0,1,1)
                     frame.add(align)
                     frame.show()
                     align.add(item)
@@ -271,4 +272,3 @@ class GCodeCornerStyle(pycam.Plugins.PluginBase):
         controls = (self.motion_tolerance, self.naive_tolerance)
         for control in controls:
             control.get_widget().set_sensitive(enable_tolerances)
-

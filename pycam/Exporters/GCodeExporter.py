@@ -23,6 +23,9 @@ along with PyCAM.  If not, see <http://www.gnu.org/licenses/>.
 
 import decimal
 import os
+import pycam.Utils.log
+
+log = pycam.Utils.log.get_logger()
 
 
 DEFAULT_HEADER = ("G40 (disable tool radius compensation)",
@@ -30,6 +33,8 @@ DEFAULT_HEADER = ("G40 (disable tool radius compensation)",
                 "G80 (cancel modal motion)",
                 "G54 (select coordinate system 1)",
                 "G90 (disable incremental moves)")
+
+DEFAULT_FOOTER = ("M2 (end program)")
 
 PATH_MODES = {"exact_path": 0, "exact_stop": 1, "continuous": 2}
 MAX_DIGITS = 12
@@ -74,7 +79,7 @@ class GCodeGenerator(object):
             touch_off_on_tool_change=False, touch_off_position=None,
             touch_off_rapid_move=0, touch_off_slow_move=1,
             touch_off_slow_feedrate=20, touch_off_height=0,
-            touch_off_pause_execution=False):
+            touch_off_pause_execution=False, footer=None):
         if isinstance(destination, basestring):
             # open the file
             self.destination = file(destination,"w")
@@ -112,6 +117,11 @@ class GCodeGenerator(object):
             self.append("G21 (metric)")
         else:
             self.append("G20 (imperial)")
+        if footer is None:
+            self.footer = DEFAULT_FOOTER
+        else:
+            self.footer = footer
+
         self.last_position = [None, None, None]
         self.last_rapid = None
         self.last_tool_id = None
@@ -315,7 +325,7 @@ class GCodeGenerator(object):
 
     def finish(self):
         self.add_move_to_safety()
-        self.append("M2 (end program)")
+        self.append(self.footer)
         self._finished = True
 
     def add_comment(self, comment):

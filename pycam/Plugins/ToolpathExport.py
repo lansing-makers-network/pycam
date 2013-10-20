@@ -184,9 +184,13 @@ class ToolpathExport(pycam.Plugins.PluginBase):
                 touch_off_pos = Point(pos_x, pos_y, pos_z)
             else:
                 touch_off_pos = None
+            gcode_header = self.core.get("gcode_header")
+            gcode_footer = self.core.get("gcode_footer")
             generator = generator_func(destination,
                     metric_units=(self.core.get("unit") == "mm"),
                     safety_height=safety_height,
+                    header=gcode_header if gcode_header else None,
+                    footer=gcode_footer if gcode_footer else None,
                     toggle_spindle_status=self.core.get("gcode_start_stop_spindle"),
                     spindle_delay=self.core.get("gcode_spindle_delay"),
                     comment=all_info, minimum_steps=minimum_steps,

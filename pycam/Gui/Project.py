@@ -99,6 +99,8 @@ PREFERENCES_DEFAULTS = {
         "gcode_start_stop_spindle": True,
         "gcode_filename_extension": "",
         "gcode_spindle_delay": 3,
+        "gcode_header": "",
+        "gcode_footer": "",
         "external_program_inkscape": "",
         "external_program_pstoedit": "",
         "touch_off_on_startup": False,
