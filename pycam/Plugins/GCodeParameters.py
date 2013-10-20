@@ -126,6 +126,25 @@ class GCodeSafetyHeight(pycam.Plugins.PluginBase):
         self.clear_state_items()
         del self.core["gcode_safety_height"]
         self.safety_height.destroy()
+        
+        
+class GCodeAlternateLineComments(pycam.Plugins.PluginBase):
+
+    DEPENDS = ["GCodePreferences"]
+    CATEGORIES = ["GCode"]
+
+    def setup(self):
+        self.alternate_line_comments = pycam.Gui.ControlsGTK.InputCheckBox()
+        self.alternate_line_comments.get_widget().show()
+        self.core.register_ui("gcode_general_parameters", "Use alternate line comments",
+                self.alternate_line_comments.get_widget(), weight=100)
+        self.core.add_item("gcode_alternate_line_comments",
+                self.alternate_line_comments.get_value, self.alternate_line_comments.set_value)
+        return True
+
+    def teardown(self):
+        del self.core["gcode_alternate_line_comments"]
+        self.alternate_line_comments.destroy()
 
 
 class GCodeFilenameExtension(pycam.Plugins.PluginBase):

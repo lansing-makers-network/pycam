@@ -446,7 +446,8 @@ There is NO WARRANTY, to the extent permitted by law.''' % VERSION
                         toggle_spindle_status=opts.gcode_no_start_stop_spindle,
                         minimum_steps=[opts.gcode_minimum_step],
                         header=gcode_header,
-                        footer=gcode_footer)
+                        footer=gcode_footer,
+                        alternate_line_comments=opts.gcode_alternate_line_comments)
                 generator.set_speed(opts.tool_feedrate, opts.tool_spindle_speed)
                 path_mode = opts.gcode_path_mode
                 PATH_MODES = pycam.Exporters.GCodeExporter.PATH_MODES

@@ -191,6 +191,7 @@ class ToolpathExport(pycam.Plugins.PluginBase):
                     safety_height=safety_height,
                     header=gcode_header if gcode_header else None,
                     footer=gcode_footer if gcode_footer else None,
+                    alternate_line_comments=self.core.get("gcode_alternate_line_comments"),
                     toggle_spindle_status=self.core.get("gcode_start_stop_spindle"),
                     spindle_delay=self.core.get("gcode_spindle_delay"),
                     comment=all_info, minimum_steps=minimum_steps,

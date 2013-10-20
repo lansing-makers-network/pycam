@@ -101,6 +101,7 @@ PREFERENCES_DEFAULTS = {
         "gcode_spindle_delay": 3,
         "gcode_header": "",
         "gcode_footer": "",
+        "gcode_alternate_line_comments": False,
         "external_program_inkscape": "",
         "external_program_pstoedit": "",
         "touch_off_on_startup": False,

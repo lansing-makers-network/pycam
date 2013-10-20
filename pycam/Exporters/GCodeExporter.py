@@ -79,7 +79,7 @@ class GCodeGenerator(object):
             touch_off_on_tool_change=False, touch_off_position=None,
             touch_off_rapid_move=0, touch_off_slow_move=1,
             touch_off_slow_feedrate=20, touch_off_height=0,
-            touch_off_pause_execution=False, footer=None):
+            touch_off_pause_execution=False, footer=None, alternate_line_comments=False):
         if isinstance(destination, basestring):
             # open the file
             self.destination = file(destination,"w")
@@ -90,6 +90,7 @@ class GCodeGenerator(object):
             self.destination = destination
             # don't close the stream if we did not open it on our own
             self._close_stream_on_exit = False
+        self.use_alternate_line_comments = alternate_line_comments
         self.safety_height = safety_height
         self.toggle_spindle_status = toggle_spindle_status
         self.spindle_delay = spindle_delay
@@ -114,9 +115,9 @@ class GCodeGenerator(object):
         else:
             self.append(header)
         if metric_units:
-            self.append("G21 (metric)")
+            self.append("G21", "metric")
         else:
-            self.append("G20 (imperial)")
+            self.append("G20", "imperial")
         if footer is None:
             self.footer = DEFAULT_FOOTER
         else:
@@ -140,35 +141,35 @@ class GCodeGenerator(object):
     def run_touch_off(self, new_tool_id=None, force_height=None):
         # either "new_tool_id" or "force_height" should be specified
         self.append("")
-        self.append("(Start of touch off operation)")
-        self.append("G90 (disable incremental moves)")
-        self.append("G49 (disable tool offset compensation)")
-        self.append("G53 G0 Z#5163 (go to touch off position: z)")
-        self.append("G28 (go to final touch off position)")
-        self.append("G91 (enter incremental mode)")
-        self.append("F%f (reduce feed rate during touch off)" % self.touch_off_slow_feedrate)
+        self.append("", "Start of touch off operation")
+        self.append("G90", "disable incremental moves")
+        self.append("G49", "disable tool offset compensation")
+        self.append("G53 G0 Z#5163", "go to touch off position: z")
+        self.append("G28", "go to final touch off position")
+        self.append("G91", "enter incremental mode")
+        self.append("F%f" % self.touch_off_slow_feedrate, "reduce feed rate during touch off")
         if self.touch_off_pause_execution:
-            self.append("(msg,Pausing before tool change)")
-            self.append("M0 (pause before touch off)")
+            self.append("", "msg,Pausing before tool change")
+            self.append("M0", "pause before touch off")
         # measure the current tool length
         if self.touch_off_rapid_move > 0:
-            self.append("G0 Z-%f (go down rapidly)" % self.touch_off_rapid_move)
-        self.append("G38.2 Z-%f (do the touch off)" % self.touch_off_slow_move)
+            self.append("G0 Z-%f" % self.touch_off_rapid_move, "go down rapidly")
+        self.append("G38.2 Z-%f" % self.touch_off_slow_move, "do the touch off")
         if not force_height is None:
             self.append("G92 Z%f" % force_height)
-        self.append("G28 (go up again)")
+        self.append("G28", "go up again")
         if not new_tool_id is None:
             # compensate the length of the new tool
-            self.append("#100=#5063 (store current tool length compensation)")
+            self.append("#100=#5063", "store current tool length compensation")
             self.append("T%d M6" % new_tool_id)
             if self.touch_off_rapid_move > 0:
-                self.append("G0 Z-%f (go down rapidly)" % self.touch_off_rapid_move)
-            self.append("G38.2 Z-%f (do the touch off)" % self.touch_off_slow_move)
-            self.append("G28 (go up again)")
+                self.append("G0 Z-%f" % self.touch_off_rapid_move, "go down rapidly")
+            self.append("G38.2 Z-%f" % self.touch_off_slow_move, "do the touch off")
+            self.append("G28", "go up again")
             # compensate the tool length difference
-            self.append("G43.1 Z[#5063-#100] (compensate the new tool length)")
-        self.append("F%f (restore feed rate)" % self.last_feedrate)
-        self.append("G90 (disable incremental mode)")
+            self.append("G43.1 Z[#5063-#100]", "compensate the new tool length")
+        self.append("F%f" % self.last_feedrate, "restore feed rate")
+        self.append("G90", "disable incremental mode")
         # Move up to a safe height. This is either "safety height" or the touch
         # off start location. The highest value of these two is used.
         if self.touch_off_on_startup and not self.touch_off_height is None:
@@ -182,20 +183,20 @@ class GCodeGenerator(object):
             # A proper ("safer") implementation would compare "safety_height"
             # with the touch off start location. But this requires "O"-Codes
             # which are only usable for EMC2 (probably).
-            self.append("G53 G0 Z#5163 (go to touch off position: z)")
+            self.append("G53 G0 Z#5163", "go to touch off position: z")
         if self.touch_off_pause_execution:
-            self.append("(msg,Pausing after tool change)")
-            self.append("M0 (pause after touch off)")
-        self.append("(End of touch off operation)")
+            self.append("", "msg,Pausing after tool change")
+            self.append("M0", "pause after touch off")
+        self.append("", "End of touch off operation")
         self.append("")
 
     def store_touch_off_position(self, position):
         if position is None:
-            self.append("G28.1 (store current position for touch off)")
+            self.append("G28.1", "store current position for touch off")
         else:
-            self.append("#5161=%f (touch off position: x)" % position.x)
-            self.append("#5162=%f (touch off position: y)" % position.y)
-            self.append("#5163=%f (touch off position: z)" % position.z)
+            self.append("#5161=%f" % position.x, "touch off position: x")
+            self.append("#5162=%f" % position.y, "touch off position: y")
+            self.append("#5163=%f" % position.z, "touch off position: z")
 
     def set_speed(self, feedrate=None, spindle_speed=None):
         if not feedrate is None:
@@ -206,24 +207,24 @@ class GCodeGenerator(object):
 
     def set_path_mode(self, mode, motion_tolerance=None,
             naive_cam_tolerance=None):
-        result = ""
+        result = []
         if mode == PATH_MODES["exact_path"]:
-            result = "G61 (exact path mode)"
+            result = ("G61", "exact path mode")
         elif mode == PATH_MODES["exact_stop"]:
-            result = "G61.1 (exact stop mode)"
+            result = ("G61.1", "exact stop mode")
         elif mode == PATH_MODES["continuous"]:
             if motion_tolerance is None:
-                result = "G64 (continuous mode with maximum speed)"
+                result = ("G64", "continuous mode with maximum speed")
             elif naive_cam_tolerance is None:
-                result = "G64 P%f (continuous mode with tolerance)" \
-                        % motion_tolerance
+                result = ("G64 P%f" % motion_tolerance,
+                          "continuous mode with tolerance")
             else:
-                result = ("G64 P%f Q%f (continuous mode with tolerance and " \
-                        + "cleanup)") % (motion_tolerance, naive_cam_tolerance)
+                result = ("G64 P%f Q%f" % (motion_tolerance, naive_cam_tolerance),
+                          "continuous mode with tolerance and cleanup")
         else:
             raise ValueError("GCodeGenerator: invalid path mode (%s)" \
                     % str(mode))
-        self.append(result)
+        self.append(result[0], result[1])
 
     def add_moves(self, moves, tool_id=None, comment=None):
         if not comment is None:
@@ -260,11 +261,11 @@ class GCodeGenerator(object):
     def set_spindle_status(self, status):
         if self.toggle_spindle_status:
             if status:
-                self.append("M3 (start spindle)")
+                self.append("M3", "start spindle")
             else:
-                self.append("M5 (stop spindle)")
-            self.append("G04 P%d (wait for %d seconds)" % (self.spindle_delay,
-                    self.spindle_delay))
+                self.append("M5", "stop spindle")
+            self.append("G04 P%d" % self.spindle_delay,
+                        "wait for %d seconds" % self.spindle_delay)
 
     def add_move_to_safety(self):
         new_pos = [None, None, self.safety_height]
@@ -336,12 +337,24 @@ class GCodeGenerator(object):
         for line in lines:
             self.append(";%s" % line)
 
-    def append(self, command):
+    def format_line_comment(self, comment):
+        if self.use_alternate_line_comments:
+            return ";%s" % comment
+        else:
+            return "(%s)" % comment
+
+    def append(self, command, comment=""):
         if self._finished:
             raise TypeError("GCodeGenerator: can't add further commands to a " \
                     + "finished GCodeGenerator instance: %s" % str(command))
+
         if isinstance(command, basestring):
+            if comment:
+                command = "%s %s" % (command, self.format_line_comment(comment))
             command = [command]
+        elif comment:
+            self.destination.write(self.format_line_comment(comment) + os.linesep)
+
         for line in command:
             self.destination.write(line + os.linesep)
 
