@@ -80,7 +80,8 @@ class GCodeGenerator(object):
             touch_off_rapid_move=0, touch_off_slow_move=1,
             touch_off_slow_feedrate=20, touch_off_height=0,
             touch_off_pause_execution=False, footer=None,
-            alternate_line_comments=False, disable_tool_during_rapids=False):
+            alternate_line_comments=False, disable_tool_during_rapids=False,
+            static_z_height=False, feedrate_with_moves=False, rapid_feedrate=0):
         if isinstance(destination, basestring):
             # open the file
             self.destination = file(destination,"w")
@@ -92,6 +93,9 @@ class GCodeGenerator(object):
             # don't close the stream if we did not open it on our own
             self._close_stream_on_exit = False
         self.use_alternate_line_comments = alternate_line_comments
+        self.static_z_height = static_z_height
+        self.feedrate_with_moves = feedrate_with_moves
+        self.rapid_feedrate = rapid_feedrate
         self.disable_tool_during_rapids = disable_tool_during_rapids
         self.safety_height = safety_height
         self.toggle_spindle_status = toggle_spindle_status
@@ -206,6 +210,7 @@ class GCodeGenerator(object):
             self.last_feedrate = feedrate
         if not spindle_speed is None:
             self.append("S%.5f" % spindle_speed)
+            self.last_spindle_rate = spindle_speed
 
     def set_path_mode(self, mode, motion_tolerance=None,
             naive_cam_tolerance=None):
@@ -270,6 +275,8 @@ class GCodeGenerator(object):
                         "wait for %d seconds" % self.spindle_delay)
 
     def add_move_to_safety(self):
+        if self.static_z_height:
+            return
         new_pos = [None, None, self.safety_height]
         self.add_move(new_pos, rapid=True)
 
@@ -283,7 +290,8 @@ class GCodeGenerator(object):
         @type rapid: bool
         """
         new_pos = []
-        for index, attr in enumerate("xyz"):
+        indices = "xy" if self.static_z_height else "xyz"
+        for index, attr in enumerate(indices):
             conv = self._axes_formatter[index][1]
             if hasattr(position, attr):
                 value = getattr(position, attr)
@@ -310,25 +318,32 @@ class GCodeGenerator(object):
             return
         # compose the position string
         pos_string = []
-        for index, axis_spec in enumerate("XYZ"):
+        indices = "XY" if self.static_z_height else "XYZ"
+        for index, axis_spec in enumerate(indices):
             if new_pos[index] is None:
                 continue
             if not self.last_position or \
                     (new_pos[index] != self.last_position[index]):
                 pos_string.append("%s%s" % (axis_spec, new_pos[index]))
                 self.last_position[index] = new_pos[index]
-        if rapid == self.last_rapid:
+        feedrate = 0
+        if rapid == self.last_rapid and False:
             prefix = ""
         elif rapid:
-            if self.disable_tool_during_rapids:
+            if self.disable_tool_during_rapids and not self.last_rapid:
                 self.append("M5")
             prefix = "G0"
+            feedrate = self.rapid_feedrate
         else:
-            if self.disable_tool_during_rapids:
-                self.append("M3")
+            if self.disable_tool_during_rapids and self.last_rapid:
+                self.append("M3 S%s" % self.last_spindle_rate)
             prefix = "G1"
+            feedrate = self.last_feedrate
         self.last_rapid = rapid
-        self.append("%s %s" % (prefix, " ".join(pos_string)))
+        if self.feedrate_with_moves and feedrate:
+            self.append("%s %s F%.5f" % (prefix, " ".join(pos_string), feedrate))
+        else:
+            self.append("%s %s" % (prefix, " ".join(pos_string)))
 
     def finish(self):
         self.add_move_to_safety()

@@ -448,7 +448,10 @@ There is NO WARRANTY, to the extent permitted by law.''' % VERSION
                         header=gcode_header,
                         footer=gcode_footer,
                         alternate_line_comments=opts.gcode_alternate_line_comments,
-                        disable_tool_during_rapids=opts.gcode_disable_tool_during_rapids)
+                        disable_tool_during_rapids=opts.gcode_disable_tool_during_rapids,
+                        static_z_height=opts.gcode_static_z_height,
+                        feedrate_with_moves=opts.gcode_feedrate_with_moves,
+                        rapid_feedrate= opts.gcode_rapid_feedrate)
                 generator.set_speed(opts.tool_feedrate, opts.tool_spindle_speed)
                 path_mode = opts.gcode_path_mode
                 PATH_MODES = pycam.Exporters.GCodeExporter.PATH_MODES

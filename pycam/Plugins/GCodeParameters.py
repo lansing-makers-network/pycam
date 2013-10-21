@@ -128,6 +128,28 @@ class GCodeSafetyHeight(pycam.Plugins.PluginBase):
         self.safety_height.destroy()
         
         
+class GCodeRapidFeedrate(pycam.Plugins.PluginBase):
+
+    DEPENDS = ["GCodePreferences"]
+    CATEGORIES = ["GCode"]
+
+    def setup(self):
+        self.rapid_feedrate = pycam.Gui.ControlsGTK.InputNumber(
+            digits=0, start=0, lower=0, upper=10000)
+
+        self.rapid_feedrate.get_widget().show()
+        self.core.register_ui("gcode_general_parameters", "Feedrate for rapid moves",
+                self.rapid_feedrate.get_widget(), weight=25)
+        self.core.add_item("gcode_rapid_feedrate",
+                self.rapid_feedrate.get_value, self.rapid_feedrate.set_value)
+        return True
+
+    def teardown(self):
+        self.clear_state_items()
+        del self.core["gcode_rapid_feedrate"]
+        self.rapid_feedrate.destroy()
+        
+        
 class GCodeAlternateLineComments(pycam.Plugins.PluginBase):
 
     DEPENDS = ["GCodePreferences"]
@@ -164,6 +186,43 @@ class GCodeDisableToolDuringRapids(pycam.Plugins.PluginBase):
     def teardown(self):
         del self.core["gcode_disable_tool_during_rapids"]
         self.disable_tool_during_rapids.destroy()
+
+
+class GCodeStaticZHeight(pycam.Plugins.PluginBase):
+
+    DEPENDS = ["GCodePreferences"]
+    CATEGORIES = ["GCode"]
+
+    def setup(self):
+        self.static_z_height = pycam.Gui.ControlsGTK.InputCheckBox()
+        self.static_z_height.get_widget().show()
+        self.core.register_ui("gcode_general_parameters", "Static Z height",
+                self.static_z_height.get_widget(), weight=100)
+        self.core.add_item("gcode_static_z_height",
+                self.static_z_height.get_value, self.static_z_height.set_value)
+        return True
+
+    def teardown(self):
+        del self.core["gcode_static_z_height"]
+        self.static_z_height.destroy()
+        
+class GCodeFeedRateWithMoves(pycam.Plugins.PluginBase):
+
+    DEPENDS = ["GCodePreferences"]
+    CATEGORIES = ["GCode"]
+
+    def setup(self):
+        self.feedrate_with_moves = pycam.Gui.ControlsGTK.InputCheckBox()
+        self.feedrate_with_moves.get_widget().show()
+        self.core.register_ui("gcode_general_parameters", "Include feed rate in move commands",
+                self.feedrate_with_moves.get_widget(), weight=100)
+        self.core.add_item("gcode_feedrate_with_moves",
+                self.feedrate_with_moves.get_value, self.feedrate_with_moves.set_value)
+        return True
+
+    def teardown(self):
+        del self.core["gcode_feedrate_with_moves"]
+        self.feedrate_with_moves.destroy()
 
 
 class GCodeFilenameExtension(pycam.Plugins.PluginBase):
@@ -221,6 +280,7 @@ class GCodeStepWidth(pycam.Plugins.PluginBase):
             self.core.unregister_ui("gcode_step_width", self.controls.pop())
         for key in "xyz":
             del self.core["gcode_minimum_step_%s" % key]
+
 
 class GCodeSpindle(pycam.Plugins.PluginBase):
 
