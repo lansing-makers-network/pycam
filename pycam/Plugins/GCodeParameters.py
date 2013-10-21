@@ -247,11 +247,15 @@ class GCodeSpindle(pycam.Plugins.PluginBase):
         self.spindle_enable.get_widget().show()
         self.core.register_ui("gcode_spindle", "Start / Stop Spindle (M3/M5)",
                 self.spindle_enable.get_widget(), weight=10)
+        self.core.add_item("gcode_start_stop_spindle",
+                           self.spindle_enable.get_widget().get_active,
+                           self.spindle_enable.get_widget().set_active)
         self.update_widgets()
         return True
 
     def teardown(self):
         del self.core["gcode_spindle_delay"]
+        del self.core["gcode_start_stop_spindle"]
         self.core.unregister_ui("gcode_spindle",
                 self.spindle_delay.get_widget())
         self.core.unregister_ui("gcode_spindle",
